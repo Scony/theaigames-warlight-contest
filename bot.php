@@ -55,6 +55,7 @@ while($line = fgets(STDIN))
 	    $max = 0;
 	    if($xpl[$i+1] == $name['your_bot'] && $xpl[$i+2] > $max)
 	      {
+		$max = $xpl[$i+2];
 		$spawnTo = (int)$xpl[$i];
 		$actual = (int)$xpl[$i+2];
 	      }
