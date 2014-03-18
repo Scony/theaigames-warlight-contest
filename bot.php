@@ -50,16 +50,14 @@ while($line = fgets(STDIN))
 	echo "No moves\n";
 	break;
       case "update_map":
+	$max = 0;
 	for($i = 1; $i < count($xpl); $i += 3)
-	  {
-	    $max = 0;
-	    if($xpl[$i+1] == $name['your_bot'] && $xpl[$i+2] > $max)
-	      {
-		$max = $xpl[$i+2];
-		$spawnTo = (int)$xpl[$i];
-		$actual = (int)$xpl[$i+2];
-	      }
-	  }
+	  if($xpl[$i+1] == $name['your_bot'] && $xpl[$i+2] > $max)
+	    {
+	      $max = $xpl[$i+2];
+	      $spawnTo = (int)$xpl[$i];
+	      $actual = (int)$xpl[$i+2];
+	    }
 	break;
       case "opponent_moves":
 	break;
