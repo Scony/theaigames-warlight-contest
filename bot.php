@@ -10,7 +10,10 @@ $regions = array();
 $neighbourList = array();
 $startingRegions = array();
 
-/* turn local variables */
+/* global inteligence variables */
+$trace = array();
+
+/* turn inteligence variables */
 $spawnTo = NULL;
 $spawn = NULL;
 $actual = NULL;
@@ -58,6 +61,9 @@ while($line = fgets(STDIN))
 	      $spawnTo = (int)$xpl[$i];
 	      $actual = (int)$xpl[$i+2];
 	    }
+	foreach($trace as $key => $value)
+	  $trace[$key] = $value + 1;
+	$trace[$spawnTo] = 0;
 	break;
       case "opponent_moves":
 	break;
@@ -66,7 +72,27 @@ while($line = fgets(STDIN))
 	  echo $name['your_bot'].' place_armies '.$spawnTo.' '.$spawn."\n";
 	else
 	  {
-	    $goTo = $neighbourList[$spawnTo][rand(0,count($neighbourList[$spawnTo])-1)];
+	    $tmp = array();
+	    foreach($neighbourList[$spawnTo] as $target)
+	      if(!array_key_exists($target,$trace))
+		$tmp[] = $target;
+	    if($tmp == array())
+	      {
+		$max = 0;
+		foreach($neighbourList[$spawnTo] as $target)
+		  {
+		    if($trace[$target] == $max)
+		      $tmp[] = $target;
+		    if($trace[$target] > $max)
+		      {
+			$tmp = array();
+			$tmp[] = $target;
+			$max = $trace[$target];
+		      }
+		  }
+	      }
+	    $goTo = $tmp[rand(0,count($tmp)-1)];
+	    /* $goTo = $neighbourList[$spawnTo][rand(0,count($neighbourList[$spawnTo])-1)]; */
 	    echo $name['your_bot'].' attack/transfer '.$spawnTo.' '.$goTo.' '.($actual + $spawn - 1)."\n";
 	  }
 	break;
