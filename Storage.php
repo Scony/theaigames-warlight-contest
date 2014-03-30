@@ -6,6 +6,7 @@ class Storage
 				 'your_bot' => NULL,
 				 'opponent_bot' => NULL
 				 );
+  /* TODO: alias na mnie (i niego?) */
 
   public static $superRegions = array();
   public static $regions = array();

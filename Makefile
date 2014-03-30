@@ -1,4 +1,4 @@
 all:
-	zip bot.zip bot.php
+	zip bot.zip *.php
 clean:
 	rm -f bot.zip *~

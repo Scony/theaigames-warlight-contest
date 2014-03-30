@@ -1,5 +1,7 @@
 <?php
 
+/* TODO: opisy co funkcje biora na wejscie */
+
 class Parser
 {
   public static function parseLine($line)
@@ -32,6 +34,23 @@ class Parser
 		  }
 	      }
 	  }
+	if($xpl[1] == 'super_regions')
+	  {
+	    for($i = 2; $i < count($xpl); $i += 2)
+	      {
+		Storage::$superRegions[(int)$xpl[$i]] = array();
+		Storage::$superRegions[(int)$xpl[$i]]['value'] = (int)$xpl[$i+1];
+		Storage::$superRegions[(int)$xpl[$i]]['regions'] = array();
+	      }
+	  }
+	if($xpl[1] == 'regions')
+	  {
+	    for($i = 2; $i < count($xpl); $i += 2)
+	      {
+		Storage::$superRegions[(int)$xpl[$i+1]]['regions'][] = (int)$xpl[$i];
+		Storage::$regions[(int)$xpl[$i]] = (int)$xpl[$i+1];
+	      }
+	  }
 	break;
       case "pick_starting_regions":
 	for($i = 2; $i < count($xpl); $i++)
@@ -49,6 +68,7 @@ class Parser
 	break;
       case "opponent_moves":
 	/* TODO: */
+	/* Intelligence::spy($re); */
 	break;
       case "go":
 	if($xpl[1] == 'place_armies')
@@ -70,6 +90,8 @@ class Parser
     $re = array();
     foreach($places as $place)
       $re[] = Storage::$botName['your_bot'].' place_armies '.$place['region'].' '.$place['armies'];
+    if($re == array())
+      return "No moves\n";
     return implode(', ',$re)."\n";
   }
 
@@ -78,6 +100,8 @@ class Parser
     $re = array();
     foreach($moves as $move)
       $re[] = Storage::$botName['your_bot'].' attack/transfer '.$move['from'].' '.$move['to'].' '.$move['armies'];
+    if($re == array())
+      return "No moves\n";
     return implode(', ',$re)."\n";
   }
 }
