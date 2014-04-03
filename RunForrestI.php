@@ -58,7 +58,7 @@ class RunForrestI extends Strategy
     else if(Intelligence::$regions[$region]['bot'] == Storage::$botName['opponent_bot'])
       $safety = Intelligence::$regions[$region]['armies'];
     else
-      $safety = 0;
+      $safety = -1;
     foreach(Storage::$neighbourList[$region] as $neighbour)
       if($neighbour != $parent)
 	$safety += $this->regionSafety($neighbour,$region,$depth-1);
