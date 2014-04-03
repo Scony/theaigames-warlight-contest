@@ -9,7 +9,7 @@ class DecisionMaker
   {
     if(self::$started)
       {
-    	self::$strategy = new StackSpread;
+    	self::$strategy = new RunForrestI;
     	self::$started = false;
       }
     if(!self::$strategy)
