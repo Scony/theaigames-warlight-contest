@@ -24,7 +24,7 @@ class Intelligence
 	$numMyRegions = 0;
 	foreach(Storage::$chosenStartingRegions as $region)
 	  {
-	    if(!isset(self::$regions[$region]))
+	    if(!array_key_exists($region,self::$regions))
 	      {
 		self::$regions[$region] = array(
 						'bot' => Storage::$botName['opponent_bot'],
