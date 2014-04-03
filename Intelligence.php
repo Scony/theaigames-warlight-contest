@@ -7,8 +7,8 @@ class Intelligence
   public static $ownership = array();
   public static $regions = array();
 
-  public static $mySpawn = Hardcode::$numInitialSpawn;
-  public static $hisSpawn = Hardcode::$numInitialSpawn;
+  public static $mySpawn = NULL;
+  public static $hisSpawn = NULL;
 
   public static function updateMap($updates)
   {
@@ -54,3 +54,6 @@ class Intelligence
     self::$round++;
   }
 }
+
+Intelligence::$mySpawn = Hardcode::$numInitialSpawn;
+Intelligence::$hisSpawn = Hardcode::$numInitialSpawn;
