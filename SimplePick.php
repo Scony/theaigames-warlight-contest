@@ -1,18 +1,18 @@
 <?php
 
-class SimpleExpand extends Strategy
+class SimplePick extends Strategy
 {
   public function pick()
   {
     $tmp = array();
     foreach(Storage::$startingRegions as $region)
-      $tmp[$region] = Storage::$superRegions[Storage::$regions[$region]]['value']; /* FIXME: more inteligent/general */
+      $tmp[$region] = Storage::$superRegions[Storage::$regions[$region]]['value'];
     asort($tmp);
     $re = array();
     $i = 0;
     foreach($tmp as $region => $rate)
       {
-	if($i++ >= Hardcode::$numInitialRegions)
+	if($i++ >= Hardcode::$numInitialRegions * 2)
 	  break;
 	$re[] = $region;
       }

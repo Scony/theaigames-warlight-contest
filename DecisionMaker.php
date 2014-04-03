@@ -14,7 +14,7 @@ class DecisionMaker
       }
     if(!self::$strategy)
       {
-	self::$strategy = new SimpleExpand;
+	self::$strategy = new SimplePick;
 	self::$started = true;
       }
 

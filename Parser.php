@@ -1,6 +1,6 @@
 <?php
 
-/* TODO: opisy co funkcje biora na wejscie */
+/* TODO: opisy tablic */
 
 class Parser
 {
@@ -19,7 +19,7 @@ class Parser
 	  }
 	Storage::$botName[$xpl[1]] = $xpl[2];
 	break;
-      case "setup_map":		/* TODO: more cases */
+      case "setup_map":
 	if($xpl[1] == 'neighbors')
 	  {
 	    $tmpList = array();
@@ -64,11 +64,32 @@ class Parser
 			'bot' => $xpl[$i+1],
 			'armies' => (int)$xpl[$i+2]
 			);
-	Intelligence::update($re);
+	Intelligence::updateMap($re);
 	break;
       case "opponent_moves":
-	/* TODO: */
-	/* Intelligence::spy($re); */
+	$re = array();
+	for($i = 1; $i < count($xpl); $i += 4)
+	  if($xpl[$i+1] == 'place_armies')
+	    {
+	      $re[] = array(
+			    'bot' => $xpl[$i],
+			    'kind' => $xpl[$i+1],
+			    'region' => (int)$xpl[$i+2],
+			    'armies' => (int)$xpl[$i+3]
+			    );
+	    }
+	  else			/* attack/transfer */
+	    {
+	      $re[] = array(
+			    'bot' => $xpl[$i],
+			    'kind' => $xpl[$i+1],
+			    'from' => (int)$xpl[$i+2],
+			    'to' => (int)$xpl[$i+3],
+			    'armies' => (int)$xpl[$i+4]
+			    );
+	      $i++;
+	    }
+	Intelligence::opponentMoves($re);
 	break;
       case "go":
 	if($xpl[1] == 'place_armies')
@@ -82,6 +103,7 @@ class Parser
   {
     if($picks == array())
       return "No moves\n";
+    Storage::$chosenStartingRegions = $picks;
     return implode(' ',$picks)."\n";
   }
 
