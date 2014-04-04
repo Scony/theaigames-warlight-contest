@@ -2,9 +2,8 @@
 
 class RunForrestI extends Strategy
 {
-  private $trace = array();
-  private $armies = 0;
-  private $spawnTo = NULL;
+  protected $armies = 0;
+  protected $spawnTo = NULL;
 
   public function place()
   {

@@ -7,7 +7,7 @@ class DecisionMaker
   public static function getStrategy()
   {
     if(get_class(self::$strategy) == 'SimplePick')
-      self::$strategy = new StackSpread;
+      self::$strategy = new SimpleExpand;
     if(!self::$strategy)
       self::$strategy = new SimplePick;
     if(Intelligence::$hisSpawn >= Intelligence::$mySpawn * 2 && get_class(self::$strategy) != 'RunForrestI')

@@ -18,7 +18,7 @@ class Intelligence
 						'bot' => $update['bot'],
 						'armies' => $update['armies']
 						);
-    /* look for enemy by round0 theorem */
+    /* look for enemy hidden in the fog by round0 theorem */
     if(!self::$round)
       {
 	$numMyRegions = 0;

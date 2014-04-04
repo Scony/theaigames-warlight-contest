@@ -55,6 +55,7 @@ class Parser
       case "pick_starting_regions":
 	for($i = 2; $i < count($xpl); $i++)
 	  Storage::$startingRegions[] = (int)$xpl[$i];
+	Storage::floyd();
 	return 1;
       case "update_map":
 	$re = array();
