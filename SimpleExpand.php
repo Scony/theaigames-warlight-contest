@@ -171,8 +171,6 @@ class SimpleExpand extends Strategy
 		if(Intelligence::$regions[$neighbour]['bot'] != Storage::$botName['your_bot'])
 		  $neutrals[$neighbour] = Intelligence::$regions[$neighbour]['armies'];
 	      asort($neutrals);
-
-	      /* if 0 neutrals */
 	      foreach($neutrals as $neutral => $armies)
 		if($armies * 2 <= $remaining)
 		  {
@@ -196,16 +194,72 @@ class SimpleExpand extends Strategy
 			if(Intelligence::$regions[$neighbour]['bot'] == Storage::$botName['your_bot'])
 			  $fellas[$neighbour] = Intelligence::$regions[$neighbour]['armies'];
 		      arsort($fellas);
-		      foreach($fellas as $fello => $armies)
-			if($armies > $remaining || ($armies == $remaining && $fello > $region))
-			  {
-			    $moves[] = array(
-					     'from' => $region,
-					     'to' => $fello,
-					     'armies' => $remaining
-					     );
-			    break;
-			  }
+
+		      /* if I am big and have no neutrals around */
+		      $keys = array_keys($fellas);
+		      if(($remaining > reset($fellas) || ($remaining == reset($fellas) && $keys[0] < $region)) && !count($neutrals)) /* go towards neutrals */
+			{
+			  /* check if whole bonus is done */
+			  if(!$this->wholeSuperRegionTaken(Storage::$regions[$region],Storage::$botName['your_bot'])) /* go to remaining */
+			    {
+			      $targets = array();
+			      foreach($this->remainingInSuperRegionArray(Storage::$regions[$region],Storage::$botName['your_bot']) as $target)
+				$targets[$target] = Storage::$floyd[$region][$target];
+			      asort($targets);
+			      $tkeys = array_keys($targets);
+			      $neighbours = array();
+			      foreach(Storage::$neighbourList[$region] as $neighbour)
+				$neighbours[$neighbour] = Storage::$floyd[$neighbour][$tkeys[0]];
+			      asort($neighbours);
+			      foreach($neighbours as $neighbour)
+				{
+				  $moves[] = array(
+						   'from' => $region,
+						   'to' => $neighbour,
+						   'armies' => $remaining
+						   );
+				  break;
+				}
+			    }
+			  else	/* go to the closest border */
+			    {
+			      $distances = Storage::$floyd[$region];
+			      asort($distances);
+			      $target = NULL;
+			      foreach($distances as $one => $nvm)
+				if(Intelligence::$regions[$one]['bot'] != Storage::$botName['your_bot'])
+				  {
+				    $target = $one;
+				    break;
+				  }
+			      $neighbours = array();
+			      foreach(Storage::$neighbourList[$region] as $neighbour)
+				$neighbours[$neighbour] = Storage::$floyd[$neighbour][$target];
+			      asort($neighbours);
+			      foreach($neighbours as $neighbour)
+				{
+				  $moves[] = array(
+						   'from' => $region,
+						   'to' => $neighbour,
+						   'armies' => $remaining
+						   );
+				  break;
+				}
+			    }
+			}
+		      else 	/* send armies to supervisors */
+			{
+			  foreach($fellas as $fello => $armies)
+			    if($armies > $remaining || ($armies == $remaining && $fello > $region))
+			      {
+				$moves[] = array(
+						 'from' => $region,
+						 'to' => $fello,
+						 'armies' => $remaining
+						 );
+				break;
+			      }
+			}
 		    }
 		  else	   /* there were attacks but smth remaining */
 		    {
@@ -216,6 +270,15 @@ class SimpleExpand extends Strategy
 	}
 
     return $moves;
+  }
+
+  protected function remainingInSuperRegionArray($superRegion,$bot)
+  {
+    $remaining = array();
+    foreach(Storage::$superRegions[$superRegion]['regions'] as $region)
+      if(!array_key_exists($region,Intelligence::$regions) || Intelligence::$regions[$region]['bot'] != $bot)
+	$remaining[] = $region;
+    return $remaining;
   }
 
   protected function remainingInSuperRegion($superRegion,$bot)
