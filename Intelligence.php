@@ -12,12 +12,18 @@ class Intelligence
 
   public static function updateMap($updates)
   {
+    /* assume that enemy took all my regions to prevent update bug */
+    foreach(self::$regions as $region => $data)
+      if($data['bot'] == Storage::$botName['your_bot'])
+	self::$regions[$region]['bot'] = Storage::$botName['opponent_bot'];
+
     /* updates */
     foreach($updates as $update)
       self::$regions[$update['region']] = array(
 						'bot' => $update['bot'],
 						'armies' => $update['armies']
 						);
+
     /* look for enemy hidden in the fog by round0 theorem */
     if(!self::$round)
       {

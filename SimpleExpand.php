@@ -211,7 +211,7 @@ class SimpleExpand extends Strategy
 			      foreach(Storage::$neighbourList[$region] as $neighbour)
 				$neighbours[$neighbour] = Storage::$floyd[$neighbour][$tkeys[0]];
 			      asort($neighbours);
-			      foreach($neighbours as $neighbour)
+			      foreach($neighbours as $neighbour => $nvm)
 				{
 				  $moves[] = array(
 						   'from' => $region,
@@ -236,7 +236,7 @@ class SimpleExpand extends Strategy
 			      foreach(Storage::$neighbourList[$region] as $neighbour)
 				$neighbours[$neighbour] = Storage::$floyd[$neighbour][$target];
 			      asort($neighbours);
-			      foreach($neighbours as $neighbour)
+			      foreach($neighbours as $neighbour => $nvm)
 				{
 				  $moves[] = array(
 						   'from' => $region,
