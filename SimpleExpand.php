@@ -73,7 +73,7 @@ class SimpleExpand extends Strategy
 	    foreach($borders as $region => $armies)
 	      {
 		$spawn[] = array(
-				 'region' => $$region,
+				 'region' => $region,
 				 'armies' => Intelligence::$mySpawn
 				 );
 		break;
