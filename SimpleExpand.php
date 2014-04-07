@@ -305,7 +305,6 @@ class SimpleExpand extends Strategy
 	    $doors++;
       }
     return $doors;
-      
   }
 
   protected function regionRate($region)
