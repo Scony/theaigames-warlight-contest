@@ -172,14 +172,14 @@ class SimpleExpand extends Strategy
 		  $neutrals[$neighbour] = Intelligence::$regions[$neighbour]['armies'];
 	      asort($neutrals);
 	      foreach($neutrals as $neutral => $armies)
-		if($armies * 2 <= $remaining)
+		if($armies + 1 <= $remaining)
 		  {
 		    $moves[] = array(
 				     'from' => $region,
 				     'to' => $neutral,
-				     'armies' => $armies * 2
+				     'armies' => $armies + 1
 				     );
-		    $remaining -= $armies * 2;
+		    $remaining -= $armies + 1;
 		  }
 		else
 		  break;
