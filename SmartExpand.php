@@ -1,6 +1,6 @@
 <?php
 
-class SimpleExpand extends Strategy
+class SmartExpand extends Strategy
 {
   public function place()
   {
@@ -8,7 +8,7 @@ class SimpleExpand extends Strategy
     $spawn = array();
 
     /* armies I can spawn whole round */
-    $myspawn = Intelligence::$myspawn;
+    $mySpawn = Intelligence::$mySpawn;
 
     /* find all sticky enemy regions and rate them (higher rate, higher need) */
     $stick = array();
@@ -62,6 +62,7 @@ class SimpleExpand extends Strategy
 	if(!count($freeSuperRegions))
 	  {
 	    /* NAIVE: spawn all to the biggest of my fields */
+	    /* UNOPT! */
 	    $maxRegion = NULL;
 	    $max = 0;
 	    foreach(Storage::$superRegions as $superRegion => $data)
@@ -93,34 +94,112 @@ class SimpleExpand extends Strategy
 		  foreach(Storage::$superRegions[$superRegion]['regions'] as $region)
 			if(array_key_exists($region,Intelligence::$regions) &&
 			   Intelligence::$regions[$region]['bot'] == Storage::$botName['your_bot'] &&
+			   !$this->isRegionDoomed($region) &&
 			   Intelligence::$regions[$region]['armies'] > $max)
 			  {
 			    $maxRegion = $region;
 			    $max = Intelligence::$regions[$region]['armies'];
 			  }
-		  $spawn[] = array(
-				   'region' => $maxRegion,
-				   'armies' => $missing
-				   );
-		  $freeSuperRegions[$superRegion] = 0;
-		  $mySpawn -= $missing;
+		  if($max > 0)
+		    {
+		      $spawn[] = array(
+				       'region' => $maxRegion,
+				       'armies' => $missing
+				       );
+		      $freeSuperRegions[$superRegion] = 0;
+		      $mySpawn -= $missing;
+		    }
+		  else		/* all regions doomed */
+		    {
+		      /* TODO: here + in move */
+		      stderr('UNIMPLEMENTED: ALL_DOOMED');
+		    }
 		}
 
 	    /* if smth remainging put it where lowest amount missing */
-	    $minSuperRegion = NULL;
-	    $min = PHP_INT_MAX;
-	    foreach($freeSuperRegions as $superRegion => $missing)
-	      if($missing > 0 && $missing < $min)
-		{
-		  $minSuperRegion = $superRegion;
-		  $min = $missing;
-		}
-	    if($min != PHP_INT_MAX)
+	    if($mySpawn > 0)
 	      {
-		/* NAIVE: spawn to biggest in super region */
-		$maxRegion = NULL;
-		$max = 0;
-		foreach(Storage::$superRegions[$minSuperRegion]['regions'] as $region)
+		$minSuperRegion = NULL;
+		$min = PHP_INT_MAX;
+		foreach($freeSuperRegions as $superRegion => $missing)
+		  if($missing > 0 && $missing < $min)
+		    {
+		      $minSuperRegion = $superRegion;
+		      $min = $missing;
+		    }
+		if($min != PHP_INT_MAX)
+		  {
+		    /* NAIVE: spawn to biggest in super region */
+		    $maxRegion = NULL;
+		    $max = 0;
+		    foreach(Storage::$superRegions[$minSuperRegion]['regions'] as $region)
+		      if(array_key_exists($region,Intelligence::$regions) &&
+			 Intelligence::$regions[$region]['bot'] == Storage::$botName['your_bot'] &&
+			 Intelligence::$regions[$region]['armies'] > $max)
+			{
+			  $maxRegion = $region;
+			  $max = Intelligence::$regions[$region]['armies'];
+			}
+		    $spawn[] = array(
+				     'region' => $maxRegion,
+				     'armies' => $mySpawn
+				     );
+		    $mySpawn -= $mySpawn;
+		  }
+	      }
+	  }
+      }
+
+    /* if smth still remaining put it to borders */
+    if($mySpawn > 0)
+      {
+	/* lookup fully taken regions */
+	$fullyTaken = array();
+	foreach(Storage::$superRegions as $superRegion => $data)
+	  if($this->isWholeSuperRegionTaken($superRegion,Storage::$botName['your_bot']))
+	    $fullyTaken[] = $superRegion;
+
+	/* make list of border-regions (sticky to doors) */
+	$borders = array();
+	foreach($fullyTaken as $superRegion)
+	  {
+	    foreach(Storage::$superRegions[$superRegion]['regions'] as $region)
+	      {
+		$doors = 0;
+		foreach(Storage::$neighbourList[$region] as $neighbour)
+		  if(Intelligence::$regions[$neighbour]['bot'] != Storage::$botName['your_bot'])
+		    $doors++;
+		if($doors > 0)
+		  $borders[$region] = $doors;
+	      }
+	  }
+
+	/* sort by number of doors */
+	arsort($borders);
+
+	/* if there are borders */
+	if($borders != array())
+	  {
+	    /* NAIVE: put all to the border with best branching */
+	    foreach($borders as $region => $nvm)
+	      {
+		$spawn[] = array(
+				 'region' => $region,
+				 'armies' => $mySpawn
+				 );
+		$mySpawn -= $mySpawn;
+		break;
+	      }
+	  }
+	else			/* if there are no borders */
+	  {
+	    /* NAIVE: spawn all to the biggest of my fields */
+	    /* UNOPT! */
+	    $maxRegion = NULL;
+	    $max = 0;
+	    foreach(Storage::$superRegions as $superRegion => $data)
+	      {
+		foreach($data['regions'] as $region)
 		  if(array_key_exists($region,Intelligence::$regions) &&
 		     Intelligence::$regions[$region]['bot'] == Storage::$botName['your_bot'] &&
 		     Intelligence::$regions[$region]['armies'] > $max)
@@ -128,26 +207,19 @@ class SimpleExpand extends Strategy
 		      $maxRegion = $region;
 		      $max = Intelligence::$regions[$region]['armies'];
 		    }
-		$spawn[] = array(
-				 'region' => $maxRegion,
-				 'armies' => $mySpawn
-				 );
-		$mySpawn -= $mySpawn;
 	      }
-
-	    /* NAIVE: if smth still remaingin put it to all equally */
-	    while($mySpawn > 0)
-	      {
-		foreach($spawn as $key => $data)
-		  {
-		    if($mySpawn <= 0)
-		      break;
-		    $spawn[$key]['armies'] += 1;
-		    $mySpawn -= 1;
-		  }
-	      }
+	    $spawn[] = array(
+			     'region' => $maxRegion,
+			     'armies' => $mySpawn
+			     );
+	    $mySpawn -= $mySpawn;
 	  }
+
       }
+
+    /* update Intelligence::$regions */
+    foreach($spawn as $data)
+      Intelligence::$regions[$data['region']]['armies'] += $data['armies'];
 
     /* return placement */
     return $spawn;
@@ -312,9 +384,25 @@ class SimpleExpand extends Strategy
     return $this->remainingInSuperRegion($superRegion,$bot) > 0 ? false : true;
   }
 
+  protected function isRegionDoomed($region)
+  {
+    foreach(Storage::$neighbourList[$region] as $neighbour)
+      if(Intelligence::$regions[$neighbour]['bot'] == Storage::$botName['opponent_bot'])
+	return true;
+    return false;
+  }
+
   protected function numArmiesMissingToTakeSuperRegion($superRegion,$bot)
   {
-    /* TODO */
+    $missing = 0;
+    foreach(Storage::$superRegions[$superRegion]['regions'] as $region)
+      if(!array_key_exists($region,Intelligence::$regions))
+	$missing += 3;
+      else if(Intelligence::$regions[$region]['bot'] != $bot)
+	$missing += Intelligence::$regions[$region]['armies'] + 1;
+      else if(!$this->isRegionDoomed($region))
+	$missing -= Intelligence::$regions[$region]['armies'] - 1;
+    return $missing;
   }
 
   protected function isInSuperRegion($superRegion,$bot)
@@ -329,5 +417,23 @@ class SimpleExpand extends Strategy
   protected function regionRate($region)
   {
     return count(Storage::$superRegions) - array_search(Storage::$regions[$region],array_keys(Storage::$superRegions));
+  }
+
+  /* OLD */
+  protected function wholeSuperRegionTaken($superRegion,$bot)
+  {
+    return $this->remainingInSuperRegion($superRegion,$bot) > 0 ? false : true;
+  }
+
+  protected function numSuperRegionDoors($superRegion)
+  {
+    $doors = 0;
+    foreach(Storage::$superRegions[$superRegion]['regions'] as $region)
+      {
+	foreach(Storage::$neighbourList[$region] as $neighbour)
+	  if(!in_array($neighbour,Storage::$superRegions[$superRegion]['regions']))
+	    $doors++;
+      }
+    return $doors;
   }
 }
