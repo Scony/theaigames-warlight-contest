@@ -229,16 +229,25 @@ class SmartExpand extends Strategy
   {
     $moves = array();
 
+    /* iterate through my fields */
     foreach(Intelligence::$regions as $region => $data)
       if($data['bot'] == Storage::$botName['your_bot'])
 	{
 	  $opponents = array();
+	  $neutrals = array();
 	  foreach(Storage::$neighbourList[$region] as $neighbour)
-	    if(Intelligence::$regions[$neighbour]['bot'] == Storage::$botName['opponent_bot'])
-	      $opponents[$neighbour] = Intelligence::$regions[$neighbour]['armies'];
+	    {
+	      if(Intelligence::$regions[$neighbour]['bot'] == Storage::$botName['opponent_bot'])
+		$opponents[$neighbour] = Intelligence::$regions[$neighbour]['armies'];
+	      if(Intelligence::$regions[$neighbour]['bot'] == 'neutral')
+		$neutrals[$neighbour] = Intelligence::$regions[$neighbour]['armies'];
+	    }
 	  asort($opponents);
+	  asort($neutrals);
 	  if(count($opponents) > 0) /* fight opponents or do nothin */
 	    {
+	      /* NAIVE: what if i got my 40vs1,1,1 */
+	      /* TODO: add ALL_DOOMED case */
 	      foreach($opponents as $opponent => $armies)
 		{
 		  if($data['armies'] - 1 > $armies)
@@ -255,108 +264,153 @@ class SmartExpand extends Strategy
 	      $remaining = $data['armies'] - 1;
 	      if($remaining <= 0)
 		continue;
-	      $neutrals = array();
-	      foreach(Storage::$neighbourList[$region] as $neighbour)
-		if(Intelligence::$regions[$neighbour]['bot'] != Storage::$botName['your_bot'])
-		  $neutrals[$neighbour] = Intelligence::$regions[$neighbour]['armies'];
-	      asort($neutrals);
-	      foreach($neutrals as $neutral => $armies)
-		if($armies + 1 <= $remaining)
-		  {
-		    $moves[] = array(
-				     'from' => $region,
-				     'to' => $neutral,
-				     'armies' => $armies + 1
-				     );
-		    $remaining -= $armies + 1;
-		  }
-		else
-		  break;
 
-	      /* if some armies remaining after attacks */
-	      if($remaining > 0)
+	      /* whole super region taken */
+	      if($this->wholeSuperRegionTaken(Storage::$regions[$region],Storage::$botName['your_bot']))
 		{
-		  if($remaining == $data['armies'] - 1)	/* if no attack has been performed */
+		  /* there are sticky neutrals */
+		  if(count($neutrals > 0))
 		    {
+		      foreach($neutrals as $neutral => $armies)
+			if($armies < $remaining)
+			  {
+			    $moves[] = array(
+					     'from' => $region,
+					     'to' => $neutral,
+					     'armies' => $armies + 1
+					     );
+			    $remaining -= $armies + 1;
+			  }
+			else
+			  break;
+		    }
+		  else	/* there are no sticky neutrals (go and find some) */
+		    {
+		      $distances = Storage::$floyd[$region];
+		      asort($distances);
+		      $target = NULL;
+		      foreach($distances as $one => $nvm)
+			if(Intelligence::$regions[$one]['bot'] != Storage::$botName['your_bot'])
+			  {
+			    $target = $one;
+			    break;
+			  }
+		      $neighbours = array();
+		      foreach(Storage::$neighbourList[$region] as $neighbour)
+			$neighbours[$neighbour] = Storage::$floyd[$neighbour][$target];
+		      asort($neighbours);
+		      foreach($neighbours as $neighbour => $nvm)
+			{
+			  $moves[] = array(
+					   'from' => $region,
+					   'to' => $neighbour,
+					   'armies' => $remaining
+					   );
+			  $remaining -= $remaining;
+			  break;
+			}		      
+		    }
+		}
+	      else 		/* not whole super region taken */
+		{
+		  /* filter neutrals from other super regions */
+		  foreach($neutrals as $neutral => $nvm)
+		    if(Storage::$regions[$region] != Storage::$regions[$neutral])
+		      unset($neutrals[$neutral]);
+
+		  /* if I can take some directly */
+		  if($neutrals != array() && reset($neutrals) < $remaining)
+		    {
+		      foreach($neutrals as $neutral => $armies)
+			if($armies < $remaining)
+			  {
+			    $moves[] = array(
+					     'from' => $region,
+					     'to' => $neutral,
+					     'armies' => $armies + 1
+					     );
+			    $remaining -= $armies + 1;
+			  }
+			else
+			  break;
+		    }
+		  else		/* I can't take anything by myself or there is nothing to take*/
+		    {
+		      /* NAIVE: !!*/
+		      /* lookup fellas */
 		      $fellas = array();
 		      foreach(Storage::$neighbourList[$region] as $neighbour)
 			if(Intelligence::$regions[$neighbour]['bot'] == Storage::$botName['your_bot'])
 			  $fellas[$neighbour] = Intelligence::$regions[$neighbour]['armies'];
 		      arsort($fellas);
 
-		      /* if I am big and have no neutrals around */
-		      $keys = array_keys($fellas);
-		      if(($remaining > reset($fellas) || ($remaining == reset($fellas) && $keys[0] < $region)) && !count($neutrals)) /* go towards neutrals */
+		      /* if I have fellas */
+		      if(count($fellas) > 0)
 			{
-			  /* check if whole bonus is done */
-			  if(!$this->wholeSuperRegionTaken(Storage::$regions[$region],Storage::$botName['your_bot'])) /* go to remaining */
+			  /* if I am local biggest */
+			  $keys = array_keys($fellas);
+			  if($remaining > reset($fellas) || ($remaining == reset($fellas) && $keys[0] < $region))
 			    {
-			      $targets = array();
-			      foreach($this->remainingInSuperRegionArray(Storage::$regions[$region],Storage::$botName['your_bot']) as $target)
-				$targets[$target] = Storage::$floyd[$region][$target];
-			      asort($targets);
-			      $tkeys = array_keys($targets);
-			      $neighbours = array();
-			      foreach(Storage::$neighbourList[$region] as $neighbour)
-				$neighbours[$neighbour] = Storage::$floyd[$neighbour][$tkeys[0]];
-			      asort($neighbours);
-			      foreach($neighbours as $neighbour => $nvm)
+			      /* if no neutrals around then go to closest one*/
+			      if($neutrals == array())
 				{
-				  $moves[] = array(
-						   'from' => $region,
-						   'to' => $neighbour,
-						   'armies' => $remaining
-						   );
-				  break;
+				  $superRegionNeutrals = array();
+				  foreach(Storage::$superRegions[Storage::$regions[$region]]['regions'] as $reg)
+				    if(!array_key_exists($reg,Intelligence::$regions) ||
+				       Intelligence::$regions[$reg]['bot'] == 'neutral')
+				      $superRegionNeutrals[$reg] = Storage::$floyd[$region][$reg];
+				  asort($superRegionNeutrals);
+				  foreach($superRegionNeutrals as $target => $nvm)
+				    {
+				      $nerbys = array();
+				      foreach($fellas as $fello => $nvm)
+					$nerbys[$fello] = Storage::$floyd[$fello][$target];
+				      asort($nerbys);
+				      foreach($nerbys as $nerby => $nvm)
+					{
+					  $moves[] = array(
+							   'from' => $region,
+							   'to' => $nerby,
+							   'armies' => $remaining,
+							   );
+					  $remaining -= $remaining;
+					  break;
+					}
+				      break;
+				    }
 				}
 			    }
-			  else	/* go to the closest border */
+			  else	/* I am not local biggest = send to bigger */
 			    {
-			      $distances = Storage::$floyd[$region];
-			      asort($distances);
-			      $target = NULL;
-			      foreach($distances as $one => $nvm)
-				if(Intelligence::$regions[$one]['bot'] != Storage::$botName['your_bot'])
-				  {
-				    $target = $one;
-				    break;
-				  }
-			      $neighbours = array();
-			      foreach(Storage::$neighbourList[$region] as $neighbour)
-				$neighbours[$neighbour] = Storage::$floyd[$neighbour][$target];
-			      asort($neighbours);
-			      foreach($neighbours as $neighbour => $nvm)
-				{
-				  $moves[] = array(
-						   'from' => $region,
-						   'to' => $neighbour,
-						   'armies' => $remaining
-						   );
-				  break;
-				}
+ 			      $moves[] = array(
+					       'from' => $region,
+					       'to' => $keys[0],
+					       'armies' => $remaining,
+					       'forwardable' => true
+					       );
+			      $remaining -= $remaining;
 			    }
 			}
-		      else 	/* send armies to supervisors */
-			{
-			  foreach($fellas as $fello => $armies)
-			    if($armies > $remaining || ($armies == $remaining && $fello > $region))
-			      {
-				$moves[] = array(
-						 'from' => $region,
-						 'to' => $fello,
-						 'armies' => $remaining
-						 );
-				break;
-			      }
-			}
-		    }
-		  else	   /* there were attacks but smth remaining */
-		    {
-		      $moves[count($moves)-1]['armies'] += $remaining;
 		    }
 		}
+
+	      /* smth still remaining and I performed some moves */
+	      if($remaining > 0 && count($moves) > 0)
+		{
+		  while($remaining > 0)
+		    foreach($moves as $key => $nvm)
+		      if($remaining > 0)
+			{
+			  $moves[$key]['armies']++;
+			  $remaining--;
+			}
+		      else
+			break;
+		}
 	    }
-	}
+	} /* end of foreach (my field) */
+
+    /* TODO: forwarding*/
 
     return $moves;
   }
