@@ -246,24 +246,48 @@ class SmartExpand extends Strategy
 	    }
 	  asort($opponents);
 	  asort($neutrals);
+	  $remaining = $data['armies'] - 1;
 	  if(count($opponents) > 0) /* fight opponents or do nothin */
 	    {
-	      /* NAIVE: what if i got my 40vs1,1,1 */
 	      /* TODO: add ALL_DOOMED case */
+
+	      /* check approx power needed */
+	      $power = 0;
 	      foreach($opponents as $opponent => $armies)
+		$power += $armies + Intelligence::$hisSpawn + 1;
+
+	      /* if I am overpowered */
+	      if($remaining >= $power)
 		{
-		  if($data['armies'] - 1 > $armies)
-		    $localMoves[] = array(
-					  'from' => $region,
-					  'to' => $opponent,
-					  'armies' => $data['armies'] - 1
-					  );
-		  break;
+		  foreach($opponents as $opponent => $armies)
+		    {
+		      $localMoves[] = array(
+					    'from' => $region,
+					    'to' => $opponent,
+					    'armies' => $armies + Intelligence::$hisSpawn + 1
+					    );
+		      $remaining -= $armies + Intelligence::$hisSpawn + 1;
+		    }
+		}
+	      else		/* I am not overpowered */
+		{
+		  foreach($opponents as $opponent => $armies)
+		    {
+		      if($data['armies'] - 1 > $armies)
+			{
+			  $localMoves[] = array(
+						'from' => $region,
+						'to' => $opponent,
+						'armies' => $remaining
+						);
+			  $remaining -= $remaining;
+			}
+		      break;
+		    }
 		}
 	    }
 	  else	       /* expand */
 	    {
-	      $remaining = $data['armies'] - 1;
 	      if($remaining <= 0)
 		continue;
 
@@ -396,20 +420,20 @@ class SmartExpand extends Strategy
 			}
 		    }
 		}
+	    }
 
-	      /* smth still remaining and I performed some moves */
-	      if($remaining > 0 && count($localMoves) > 0)
-		{
-		  while($remaining > 0)
-		    foreach($localMoves as $key => $nvm)
-		      if($remaining > 0)
-			{
-			  $localMoves[$key]['armies']++;
-			  $remaining--;
-			}
-		      else
-			break;
-		}
+	  /* smth still remaining and I performed some moves */
+	  if($remaining > 0 && count($localMoves) > 0)
+	    {
+	      while($remaining > 0)
+		foreach($localMoves as $key => $nvm)
+		  if($remaining > 0)
+		    {
+		      $localMoves[$key]['armies']++;
+		      $remaining--;
+		    }
+		  else
+		    break;
 	    }
 
 	  /* merge localMoves and moves */
