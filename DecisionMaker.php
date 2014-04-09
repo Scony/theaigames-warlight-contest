@@ -10,7 +10,7 @@ class DecisionMaker
       self::$strategy = new SmartExpand;
     if(!self::$strategy)
       self::$strategy = new SmartPick;
-    if(Intelligence::$hisSpawn >= Intelligence::$mySpawn * 2 && get_class(self::$strategy) != 'RunForrestI')
+    if(Intelligence::$hisSpawn >= Intelligence::$mySpawn * 3 && get_class(self::$strategy) != 'RunForrestI')
       self::$strategy = new RunForrestI;
 
     $str = get_class(self::$strategy);

@@ -92,14 +92,14 @@ class SmartExpand extends Strategy
 		  $maxRegion = NULL;
 		  $max = 0;
 		  foreach(Storage::$superRegions[$superRegion]['regions'] as $region)
-			if(array_key_exists($region,Intelligence::$regions) &&
-			   Intelligence::$regions[$region]['bot'] == Storage::$botName['your_bot'] &&
-			   !$this->isRegionDoomed($region) &&
-			   Intelligence::$regions[$region]['armies'] > $max)
-			  {
-			    $maxRegion = $region;
-			    $max = Intelligence::$regions[$region]['armies'];
-			  }
+		    if(array_key_exists($region,Intelligence::$regions) &&
+		       Intelligence::$regions[$region]['bot'] == Storage::$botName['your_bot'] &&
+		       !$this->isRegionDoomed($region) &&
+		       Intelligence::$regions[$region]['armies'] > $max)
+		      {
+			$maxRegion = $region;
+			$max = Intelligence::$regions[$region]['armies'];
+		      }
 		  if($max > 0)
 		    {
 		      $spawn[] = array(
@@ -254,10 +254,10 @@ class SmartExpand extends Strategy
 		{
 		  if($data['armies'] - 1 > $armies)
 		    $localMoves[] = array(
-				     'from' => $region,
-				     'to' => $opponent,
-				     'armies' => $data['armies'] - 1
-				     );
+					  'from' => $region,
+					  'to' => $opponent,
+					  'armies' => $data['armies'] - 1
+					  );
 		  break;
 		}
 	    }
@@ -277,10 +277,10 @@ class SmartExpand extends Strategy
 			if($armies < $remaining)
 			  {
 			    $localMoves[] = array(
-					     'from' => $region,
-					     'to' => $neutral,
-					     'armies' => $armies + 1
-					     );
+						  'from' => $region,
+						  'to' => $neutral,
+						  'armies' => $armies + 1
+						  );
 			    $remaining -= $armies + 1;
 			  }
 			else
@@ -304,10 +304,10 @@ class SmartExpand extends Strategy
 		      foreach($neighbours as $neighbour => $nvm)
 			{
 			  $localMoves[] = array(
-					   'from' => $region,
-					   'to' => $neighbour,
-					   'armies' => $remaining
-					   );
+						'from' => $region,
+						'to' => $neighbour,
+						'armies' => $remaining
+						);
 			  $remaining -= $remaining;
 			  break;
 			}		      
@@ -327,10 +327,10 @@ class SmartExpand extends Strategy
 			if($armies < $remaining)
 			  {
 			    $localMoves[] = array(
-					     'from' => $region,
-					     'to' => $neutral,
-					     'armies' => $armies + 1
-					     );
+						  'from' => $region,
+						  'to' => $neutral,
+						  'armies' => $armies + 1
+						  );
 			    $remaining -= $armies + 1;
 			  }
 			else
@@ -352,7 +352,7 @@ class SmartExpand extends Strategy
 			{
 			  /* if I am local biggest */
 			  $keys = array_keys($fellas);
-			  if($remaining > reset($fellas) || ($remaining == reset($fellas) && $keys[0] < $region))
+			  if($remaining > reset($fellas) - 1 || ($remaining == reset($fellas) - 1 && $keys[0] < $region))
 			    {
 			      /* if no neutrals around then go to closest one*/
 			      if($neutrals == array())
@@ -372,10 +372,10 @@ class SmartExpand extends Strategy
 				      foreach($nerbys as $nerby => $nvm)
 					{
 					  $localMoves[] = array(
-							   'from' => $region,
-							   'to' => $nerby,
-							   'armies' => $remaining,
-							   );
+								'from' => $region,
+								'to' => $nerby,
+								'armies' => $remaining,
+								);
 					  $remaining -= $remaining;
 					  break;
 					}
@@ -386,11 +386,11 @@ class SmartExpand extends Strategy
 			  else	/* I am not local biggest = send to bigger */
 			    {
  			      $localMoves[] = array(
-					       'from' => $region,
-					       'to' => $keys[0],
-					       'armies' => $remaining,
-					       'forwardable' => true
-					       );
+						    'from' => $region,
+						    'to' => $keys[0],
+						    'armies' => $remaining,
+						    'forwardable' => true
+						    );
 			      $remaining -= $remaining;
 			    }
 			}
@@ -416,7 +416,22 @@ class SmartExpand extends Strategy
 	  $moves = array_merge($moves,$localMoves);
 	} /* end of foreach (my field) */
 
-    /* TODO: forwarding*/
+    /* forwarding */
+    for($i = 0; $i < 5; $i++)
+      {
+	foreach($moves as $key => $move)
+	  if(array_key_exists('forwardable',$move))
+	    foreach($moves as $key2 => $move2)
+	      if($move['to'] == $move2['from'] &&
+		 !array_key_exists('forwardable',$move2) &&
+		 (in_array($move2['to'],Storage::$neighbourList[$move['from']]) || $move2['to'] == $move['from']))
+		{
+		  $moves[$key]['to'] = $move2['to'];
+		  unset($moves[$key]['forwardable']);
+		  if($move2['to'] == $move['from'])
+		    unset($moves[$key]);
+		}
+      }
 
     return $moves;
   }
