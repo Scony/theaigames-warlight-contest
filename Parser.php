@@ -41,6 +41,8 @@ class Parser
 		Storage::$superRegions[(int)$xpl[$i]] = array();
 		Storage::$superRegions[(int)$xpl[$i]]['value'] = (int)$xpl[$i+1];
 		Storage::$superRegions[(int)$xpl[$i]]['regions'] = array();
+		Storage::$superRegions[(int)$xpl[$i]]['doors'] = array();
+		Storage::$superRegions[(int)$xpl[$i]]['picks'] = array();
 	      }
 	  }
 	if($xpl[1] == 'regions')
@@ -55,7 +57,7 @@ class Parser
       case "pick_starting_regions":
 	for($i = 2; $i < count($xpl); $i++)
 	  Storage::$startingRegions[] = (int)$xpl[$i];
-	Storage::floyd();
+	Storage::prepare();
 	return 1;
       case "update_map":
 	$re = array();

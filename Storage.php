@@ -15,9 +15,9 @@ class Storage
 
   public static $chosenStartingRegions = array();
 
-  public static function floyd()
+  public static function prepare()
   {
-    /* prepare matrix */
+    /* prepare floyd's matrix */
     foreach(self::$regions as $region => $nvm)
       {
 	self::$floyd[$region] = array();
@@ -30,7 +30,7 @@ class Storage
 	    self::$floyd[$region][$region2] = (int)(PHP_INT_MAX / 3);
       }
 
-    /* pure floyd */
+    /* lets floyd */
     foreach(array_keys(self::$floyd) as $k)
       {
     	foreach(array_keys(self::$floyd) as $i)
@@ -39,6 +39,21 @@ class Storage
     	      if(self::$floyd[$i][$j] > self::$floyd[$i][$k] + self::$floyd[$k][$j])
     		self::$floyd[$i][$j] = self::$floyd[$i][$k] + self::$floyd[$k][$j];
     	  }
+      }
+
+    /* append picks */
+    foreach(self::$startingRegions as $region)
+      self::$superRegions[self::$regions[$region]]['picks'][] = $region;
+
+    /* append doors (regions from other super regions but sticky to this one) */
+    foreach(self::$superRegions as $superRegion => $data)
+      {
+	foreach(self::$superRegions[$superRegion]['regions'] as $region)
+	  {
+	    foreach(self::$neighbourList[$region] as $neighbour)
+	      if(!in_array($neighbour,self::$superRegions[$superRegion]['regions']) && !in_array($neighbour,self::$superRegions[$superRegion]['doors']))
+		self::$superRegions[$superRegion]['doors'][] = $neighbour;
+	  }
       }
   }
 }
