@@ -233,6 +233,8 @@ class SmartExpand extends Strategy
     foreach(Intelligence::$regions as $region => $data)
       if($data['bot'] == Storage::$botName['your_bot'])
 	{
+	  $localMoves = array();
+
 	  $opponents = array();
 	  $neutrals = array();
 	  foreach(Storage::$neighbourList[$region] as $neighbour)
@@ -251,7 +253,7 @@ class SmartExpand extends Strategy
 	      foreach($opponents as $opponent => $armies)
 		{
 		  if($data['armies'] - 1 > $armies)
-		    $moves[] = array(
+		    $localMoves[] = array(
 				     'from' => $region,
 				     'to' => $opponent,
 				     'armies' => $data['armies'] - 1
@@ -266,15 +268,15 @@ class SmartExpand extends Strategy
 		continue;
 
 	      /* whole super region taken */
-	      if($this->wholeSuperRegionTaken(Storage::$regions[$region],Storage::$botName['your_bot']))
+	      if($this->isWholeSuperRegionTaken(Storage::$regions[$region],Storage::$botName['your_bot']))
 		{
 		  /* there are sticky neutrals */
-		  if(count($neutrals > 0))
+		  if(count($neutrals) > 0)
 		    {
 		      foreach($neutrals as $neutral => $armies)
 			if($armies < $remaining)
 			  {
-			    $moves[] = array(
+			    $localMoves[] = array(
 					     'from' => $region,
 					     'to' => $neutral,
 					     'armies' => $armies + 1
@@ -301,7 +303,7 @@ class SmartExpand extends Strategy
 		      asort($neighbours);
 		      foreach($neighbours as $neighbour => $nvm)
 			{
-			  $moves[] = array(
+			  $localMoves[] = array(
 					   'from' => $region,
 					   'to' => $neighbour,
 					   'armies' => $remaining
@@ -324,7 +326,7 @@ class SmartExpand extends Strategy
 		      foreach($neutrals as $neutral => $armies)
 			if($armies < $remaining)
 			  {
-			    $moves[] = array(
+			    $localMoves[] = array(
 					     'from' => $region,
 					     'to' => $neutral,
 					     'armies' => $armies + 1
@@ -340,7 +342,8 @@ class SmartExpand extends Strategy
 		      /* lookup fellas */
 		      $fellas = array();
 		      foreach(Storage::$neighbourList[$region] as $neighbour)
-			if(Intelligence::$regions[$neighbour]['bot'] == Storage::$botName['your_bot'])
+			if(Storage::$regions[$neighbour] == Storage::$regions[$region] &&
+			   Intelligence::$regions[$neighbour]['bot'] == Storage::$botName['your_bot'])
 			  $fellas[$neighbour] = Intelligence::$regions[$neighbour]['armies'];
 		      arsort($fellas);
 
@@ -368,7 +371,7 @@ class SmartExpand extends Strategy
 				      asort($nerbys);
 				      foreach($nerbys as $nerby => $nvm)
 					{
-					  $moves[] = array(
+					  $localMoves[] = array(
 							   'from' => $region,
 							   'to' => $nerby,
 							   'armies' => $remaining,
@@ -382,7 +385,7 @@ class SmartExpand extends Strategy
 			    }
 			  else	/* I am not local biggest = send to bigger */
 			    {
- 			      $moves[] = array(
+ 			      $localMoves[] = array(
 					       'from' => $region,
 					       'to' => $keys[0],
 					       'armies' => $remaining,
@@ -395,19 +398,22 @@ class SmartExpand extends Strategy
 		}
 
 	      /* smth still remaining and I performed some moves */
-	      if($remaining > 0 && count($moves) > 0)
+	      if($remaining > 0 && count($localMoves) > 0)
 		{
 		  while($remaining > 0)
-		    foreach($moves as $key => $nvm)
+		    foreach($localMoves as $key => $nvm)
 		      if($remaining > 0)
 			{
-			  $moves[$key]['armies']++;
+			  $localMoves[$key]['armies']++;
 			  $remaining--;
 			}
 		      else
 			break;
 		}
 	    }
+
+	  /* merge localMoves and moves */
+	  $moves = array_merge($moves,$localMoves);
 	} /* end of foreach (my field) */
 
     /* TODO: forwarding*/
@@ -471,23 +477,5 @@ class SmartExpand extends Strategy
   protected function regionRate($region)
   {
     return count(Storage::$superRegions) - array_search(Storage::$regions[$region],array_keys(Storage::$superRegions));
-  }
-
-  /* OLD */
-  protected function wholeSuperRegionTaken($superRegion,$bot)
-  {
-    return $this->remainingInSuperRegion($superRegion,$bot) > 0 ? false : true;
-  }
-
-  protected function numSuperRegionDoors($superRegion)
-  {
-    $doors = 0;
-    foreach(Storage::$superRegions[$superRegion]['regions'] as $region)
-      {
-	foreach(Storage::$neighbourList[$region] as $neighbour)
-	  if(!in_array($neighbour,Storage::$superRegions[$superRegion]['regions']))
-	    $doors++;
-      }
-    return $doors;
   }
 }
