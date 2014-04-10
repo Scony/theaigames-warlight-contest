@@ -381,13 +381,13 @@ class SmartExpand extends Strategy
 			      /* if no neutrals around then go to closest one*/
 			      if($neutrals == array())
 				{
-				  $superRegionNeutrals = array();
+				  $superRegionNotmines = array();
 				  foreach(Storage::$superRegions[Storage::$regions[$region]]['regions'] as $reg)
 				    if(!array_key_exists($reg,Intelligence::$regions) ||
-				       Intelligence::$regions[$reg]['bot'] == 'neutral')
-				      $superRegionNeutrals[$reg] = Storage::$floyd[$region][$reg];
-				  asort($superRegionNeutrals);
-				  foreach($superRegionNeutrals as $target => $nvm)
+				       Intelligence::$regions[$reg]['bot'] != Storage::$botName['your_bot'])
+				      $superRegionNotmines[$reg] = Storage::$floyd[$region][$reg];
+				  asort($superRegionNotmines);
+				  foreach($superRegionNotmines as $target => $nvm)
 				    {
 				      $nerbys = array();
 				      foreach($fellas as $fello => $nvm)
