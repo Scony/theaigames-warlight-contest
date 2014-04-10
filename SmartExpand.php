@@ -460,15 +460,6 @@ class SmartExpand extends Strategy
     return $moves;
   }
 
-  protected function remainingInSuperRegionArray($superRegion,$bot)
-  {
-    $remaining = array();
-    foreach(Storage::$superRegions[$superRegion]['regions'] as $region)
-      if(!array_key_exists($region,Intelligence::$regions) || Intelligence::$regions[$region]['bot'] != $bot)
-	$remaining[] = $region;
-    return $remaining;
-  }
-
   protected function remainingInSuperRegion($superRegion,$bot)
   {
     $remaining = 0;
