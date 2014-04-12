@@ -273,7 +273,7 @@ class SmartExpand extends Strategy
 		{
 		  foreach($opponents as $opponent => $armies)
 		    {
-		      if($data['armies'] - 1 > $armies)
+		      if($data['armies'] - 1 >= $armies + Intelligence::$hisSpawn - 1)
 			{
 			  $localMoves[] = array(
 						'from' => $region,
