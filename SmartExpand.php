@@ -24,9 +24,14 @@ class SmartExpand extends Strategy
     /* attack-oriented spawn phase (if needed) */
     if(count($stick))
       {
-	/* spawn all-1 to my best field sticky to first el of $stick */
+	/* spawn where its reasonable */
 	foreach($stick as $region => $nvm)
 	  {
+	    /* break if I have used mySpawn - 1 */
+	    if($mySpawn <= 1)
+	      break;
+
+	    /* find my max region nerby */
 	    $max = 0;
 	    $id = NULL;
 	    foreach(Storage::$neighbourList[$region] as $neighbour)
@@ -37,12 +42,34 @@ class SmartExpand extends Strategy
 		  $max = Intelligence::$regions[$neighbour]['armies'];
 		  $id = $neighbour;
 		}
-	    $spawn[] = array(
-			     'region' => $id,
-			     'armies' => $mySpawn - 1
-			     );
-	    $mySpawn -= $mySpawn - 1;
-	    break;
+
+	    /* best case: he adds, I have advantage */
+	    if(($max - 1) * Hardcode::$attackChances > (Intelligence::$regions[$region]['armies'] + Intelligence::$hisSpawn) * Hardcode::$defendChances)
+	      continue;
+
+	    /* good case: I add, I have advantage */
+	    if(($max + $mySpawn - 1 - 1) * Hardcode::$attackChances > Intelligence::$regions[$region]['armies'] * Hardcode::$defendChances)
+	      {
+		$spawn[] = array(
+				 'region' => $id,
+				 'armies' => $mySpawn - 1
+				 );
+		$mySpawn -= $mySpawn - 1;
+		break;
+	      }
+
+	    /* bad case: he adds, he have advantage */
+	    if($max * Hardcode::$defendChances < (Intelligence::$regions[$region]['armies'] + Intelligence::$hisSpawn - 1) * Hardcode::$attackChances)
+	      {
+		$need = ceil(((Intelligence::$regions[$region]['armies'] + Intelligence::$hisSpawn - 1) * Hardcode::$attackChances) - 
+			     ($max * Hardcode::$defendChances));
+		$mySpawnThere = $need >= $mySpawn - 1 ? $mySpawn - 1 : $need;
+		$spawn[] = array(
+				 'region' => $id,
+				 'armies' => $mySpawnThere
+				 );
+		$mySpawn -= $mySpawnThere;
+	      }
 	  }
       }
 
