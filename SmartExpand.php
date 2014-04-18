@@ -32,16 +32,46 @@ class SmartExpand extends Strategy
 	      break;
 
 	    /* find my max region nerby */
+	    $sames = array();
 	    $max = 0;
 	    $id = NULL;
 	    foreach(Storage::$neighbourList[$region] as $neighbour)
 	      if(array_key_exists($neighbour,Intelligence::$regions) &&
-		 Intelligence::$regions[$neighbour]['bot'] == Storage::$botName['your_bot'] &&
-		 Intelligence::$regions[$neighbour]['armies'] > $max)
+		 Intelligence::$regions[$neighbour]['bot'] == Storage::$botName['your_bot'])
 		{
-		  $max = Intelligence::$regions[$neighbour]['armies'];
-		  $id = $neighbour;
+		  if(Intelligence::$regions[$neighbour]['armies'] > $max)
+		    {
+		      $sames = array($neighbour => -1);
+		      $max = Intelligence::$regions[$neighbour]['armies'];
+		      $id = $neighbour;
+		    }
+		  else if(Intelligence::$regions[$neighbour]['armies'] == $max)
+		    $sames[$neighbour] = -1;
 		}
+
+	    /* if there are few same fields */
+	    if(count($sames) > 1)
+	      {
+		/* calculate distance to all my fields */
+		foreach($sames as $same => $nvm)
+		  {
+		    $totalDistance = 0;
+		    foreach(Intelligence::$regions as $one => $data)
+		      if($data['bot'] == Storage::$botName['your_bot'])
+			$totalDistance += Storage::$floyd[$same][$one];
+		    $sames[$same] = $totalDistance;
+		  }
+
+		/* sort */
+		asort($sames);
+
+		/* first one (most close to other my regions) is best one to spawn my armies */
+		foreach($sames as $same => $nvm)
+		  {
+		    $id = $same;
+		    break;
+		  }
+	      }
 
 	    /* best case: he adds, I have advantage */
 	    if(($max - 1) * Hardcode::$attackChances > (Intelligence::$regions[$region]['armies'] + Intelligence::$hisSpawn) * Hardcode::$defendChances)
@@ -204,14 +234,12 @@ class SmartExpand extends Strategy
 		      $maxRegion = $region;
 		      $max = $data['armies'];
 		    }
-	      }
 	    $spawn[] = array(
 			     'region' => $maxRegion,
 			     'armies' => $mySpawn
 			     );
 	    $mySpawn -= $mySpawn;
 	  }
-
       }
 
     /* update Intelligence::$regions */
