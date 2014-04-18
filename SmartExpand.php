@@ -239,6 +239,7 @@ class SmartExpand extends Strategy
 	{
 	  $localMoves = array();
 
+	  /* prepare list of opponents/neutrals nerby */
 	  $opponents = array();
 	  $neutrals = array();
 	  foreach(Storage::$neighbourList[$region] as $neighbour)
@@ -251,33 +252,35 @@ class SmartExpand extends Strategy
 	  asort($opponents);
 	  asort($neutrals);
 	  $remaining = $data['armies'] - 1;
-	  if(count($opponents) > 0) /* fight opponents or do nothin */
+
+	  /* fight opponents or do nothin */
+	  if(count($opponents) > 0)
 	    {
 	      /* TODO: add ALL_DOOMED case */
 
-	      /* check approx power needed */
-	      $power = 0;
+	      /* check exact power needed */
+	      $need = 0;
 	      foreach($opponents as $opponent => $armies)
-		$power += $armies + Intelligence::$hisSpawn + 1;
+		$need += ceil(($armies + Intelligence::$hisSpawn) * Hardcode::$defendChances / Hardcode::$attackChances);
 
 	      /* if I am overpowered */
-	      if($remaining >= $power)
+	      if($remaining >= $need)
 		{
 		  foreach($opponents as $opponent => $armies)
 		    {
 		      $localMoves[] = array(
 					    'from' => $region,
 					    'to' => $opponent,
-					    'armies' => $armies + Intelligence::$hisSpawn + 1
+					    'armies' => ceil(($armies + Intelligence::$hisSpawn) * Hardcode::$defendChances / Hardcode::$attackChances)
 					    );
-		      $remaining -= $armies + Intelligence::$hisSpawn + 1;
+		      $remaining -= ceil(($armies + Intelligence::$hisSpawn) * Hardcode::$defendChances / Hardcode::$attackChances);
 		    }
 		}
 	      else		/* I am not overpowered */
 		{
 		  foreach($opponents as $opponent => $armies)
 		    {
-		      if($data['armies'] - 1 >= $armies + Intelligence::$hisSpawn - 1)
+		      if($remaining >= ceil(($armies + Intelligence::$hisSpawn) * Hardcode::$defendChances / Hardcode::$attackChances))
 			{
 			  $localMoves[] = array(
 						'from' => $region,
