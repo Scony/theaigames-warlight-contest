@@ -85,31 +85,8 @@ class SmartExpand extends Strategy
 	     !$this->isWholeSuperRegionTaken($superRegion,Storage::$botName['your_bot']))
 	    $freeSuperRegions[$superRegion] = $this->numArmiesMissingToTakeSuperRegion($superRegion,Storage::$botName['your_bot']);
 
-	/* if there are no free super regions */
-	if(!count($freeSuperRegions))
-	  {
-	    /* NAIVE: spawn all to the biggest of my fields */
-	    /* UNOPT! */
-	    $maxRegion = NULL;
-	    $max = 0;
-	    foreach(Storage::$superRegions as $superRegion => $data)
-	      {
-		foreach($data['regions'] as $region)
-		  if(array_key_exists($region,Intelligence::$regions) &&
-		     Intelligence::$regions[$region]['bot'] == Storage::$botName['your_bot'] &&
-		     Intelligence::$regions[$region]['armies'] > $max)
-		    {
-		      $maxRegion = $region;
-		      $max = Intelligence::$regions[$region]['armies'];
-		    }
-	      }
-	    $spawn[] = array(
-			     'region' => $maxRegion,
-			     'armies' => $mySpawn
-			     );
-	    $mySpawn -= $mySpawn;
-	  }
-	else			/* if there are free super regions */
+	/* if there are free super regions */
+	if(count($freeSuperRegions))
 	  {
 	    /* try to satisfy em */
 	    foreach($freeSuperRegions as $superRegion => $missing)
