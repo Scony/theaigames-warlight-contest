@@ -92,7 +92,7 @@ class SmartExpand extends Strategy
 	    foreach($freeSuperRegions as $superRegion => $missing)
 	      if($missing > 0 && $mySpawn >= $missing)
 		{
-		  /* NAIVE: spawn to biggest in super region */
+		  /* NAIVE: spawn to the biggest in super region */
 		  $maxRegion = NULL;
 		  $max = 0;
 		  foreach(Storage::$superRegions[$superRegion]['regions'] as $region)
@@ -104,6 +104,8 @@ class SmartExpand extends Strategy
 			$maxRegion = $region;
 			$max = Intelligence::$regions[$region]['armies'];
 		      }
+
+		  /* if not all doomed */
 		  if($max > 0)
 		    {
 		      $spawn[] = array(
@@ -112,11 +114,6 @@ class SmartExpand extends Strategy
 				       );
 		      $freeSuperRegions[$superRegion] = 0;
 		      $mySpawn -= $missing;
-		    }
-		  else		/* all regions doomed */
-		    {
-		      /* TODO: here + in move */
-		      stderr('UNIMPLEMENTED: ALL_DOOMED');
 		    }
 		}
 
@@ -133,7 +130,7 @@ class SmartExpand extends Strategy
 		    }
 		if($min != PHP_INT_MAX)
 		  {
-		    /* NAIVE: spawn to biggest in super region */
+		    /* NAIVE: spawn to the biggest in super region */
 		    $maxRegion = NULL;
 		    $max = 0;
 		    foreach(Storage::$superRegions[$minSuperRegion]['regions'] as $region)
@@ -256,8 +253,6 @@ class SmartExpand extends Strategy
 	  /* fight opponents or do nothin */
 	  if(count($opponents) > 0)
 	    {
-	      /* TODO: add ALL_DOOMED case */
-
 	      /* check exact power needed */
 	      $need = 0;
 	      foreach($opponents as $opponent => $armies)
