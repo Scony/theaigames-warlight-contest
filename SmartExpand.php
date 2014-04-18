@@ -195,18 +195,14 @@ class SmartExpand extends Strategy
 	else			/* if there are no borders */
 	  {
 	    /* NAIVE: spawn all to the biggest of my fields */
-	    /* UNOPT! */
 	    $maxRegion = NULL;
 	    $max = 0;
-	    foreach(Storage::$superRegions as $superRegion => $data)
-	      {
-		foreach($data['regions'] as $region)
-		  if(array_key_exists($region,Intelligence::$regions) &&
-		     Intelligence::$regions[$region]['bot'] == Storage::$botName['your_bot'] &&
-		     Intelligence::$regions[$region]['armies'] > $max)
+	    foreach(Intelligence::$regions as $region => $data)
+	      if($data['bot'] == Storage::$botName['your_bot'] &&
+		 $data['armies'] > $max)
 		    {
 		      $maxRegion = $region;
-		      $max = Intelligence::$regions[$region]['armies'];
+		      $max = $data['armies'];
 		    }
 	      }
 	    $spawn[] = array(
